@@ -119,8 +119,9 @@ var cognitiveSpecs = map[string]cognitiveSpec{
 
 // cognitiveComplexity computes cognitive complexity for each function span, or
 // returns nil when the language has no spec (cognitive unavailable). The
-// result is index-aligned with funcSpans; each entry is a fresh *int.
-func cognitiveComplexity(language string, ls *langState, tree *ts.Tree, funcSpans []funcSpan) []*int {
+// result is index-aligned with funcSpans; each entry is a fresh *int. lang must
+// be the *ts.Language the tree was parsed with.
+func cognitiveComplexity(language string, lang *ts.Language, tree *ts.Tree, funcSpans []Span) []*int {
 	spec, ok := cognitiveSpecs[language]
 	if !ok {
 		return nil
@@ -131,7 +132,7 @@ func cognitiveComplexity(language string, ls *langState, tree *ts.Tree, funcSpan
 	cog := make([]int, len(funcSpans))
 	byRange := make(map[[2]uint32]int, len(funcSpans))
 	for i, s := range funcSpans {
-		byRange[[2]uint32{s.start, s.end}] = i
+		byRange[[2]uint32{s.StartByte, s.EndByte}] = i
 	}
 	elseIf := map[[2]uint32]bool{}
 
@@ -150,19 +151,19 @@ func cognitiveComplexity(language string, ls *langState, tree *ts.Tree, funcSpan
 				walk(c, idx, 0)
 				continue
 			}
-			t := c.Type(ls.lang)
+			t := c.Type(lang)
 			if spec.nesting[t] {
 				if elseIf[rng] {
 					if spanIdx >= 0 {
 						cog[spanIdx]++ // else if: flat cost, no nesting penalty
 					}
-					tagElseIf(c, t, spec, ls.lang, elseIf)
+					tagElseIf(c, t, spec, lang, elseIf)
 					walk(c, spanIdx, nesting)
 				} else {
 					if spanIdx >= 0 {
 						cog[spanIdx] += 1 + nesting
 					}
-					tagElseIf(c, t, spec, ls.lang, elseIf)
+					tagElseIf(c, t, spec, lang, elseIf)
 					walk(c, spanIdx, nesting+1)
 				}
 			} else if spec.flat[t] {
@@ -170,8 +171,8 @@ func cognitiveComplexity(language string, ls *langState, tree *ts.Tree, funcSpan
 					cog[spanIdx]++
 				}
 				walk(c, spanIdx, nesting)
-			} else if op := boolOp(c, ls.lang); op != "" {
-				if spanIdx >= 0 && !sameRunAsParent(c, op, ls.lang) {
+			} else if op := boolOp(c, lang); op != "" {
+				if spanIdx >= 0 && !sameRunAsParent(c, op, lang) {
 					cog[spanIdx]++
 				}
 				walk(c, spanIdx, nesting)

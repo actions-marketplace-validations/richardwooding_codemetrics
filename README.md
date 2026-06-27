@@ -154,6 +154,17 @@ interchangeable. Cognitive complexity is computed for every language except
 Swift (whose grammar lacks a stable cognitive spec) — there `Cognitive` is nil
 while `Cyclomatic` is still reported.
 
+**Already parsed the tree?** If you've parsed the source with gotreesitter
+yourself (e.g. while extracting symbols), compute metrics over that existing
+tree — no second parse:
+
+```go
+func MetricsFromTree(language string, tree *ts.Tree, lang *ts.Language, spans []Span) []codemetrics.FunctionMetrics
+```
+
+This is how [`treesitter-symbols`][tss] returns symbols *and* complexity from a
+single parse.
+
 **Dependencies stay opt-in.** The module root is `go/ast`-only and pulls in
 nothing; `gotreesitter` and its embedded grammars are compiled in *only* when
 you import the `treesitter` subpackage. A plain build of that subpackage embeds
@@ -172,3 +183,5 @@ MIT — see [LICENSE](LICENSE).
 [gocognit]: https://github.com/uudashr/gocognit
 [sonar]: https://www.sonarsource.com/docs/CognitiveComplexity.pdf
 [gotreesitter]: https://github.com/odvcencio/gotreesitter
+
+[tss]: https://github.com/richardwooding/treesitter-symbols

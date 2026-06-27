@@ -134,13 +134,35 @@ Directories are walked recursively for `.go` files, skipping `vendor`,
 
 Flags: `-sort cognitive|cyclomatic`, `-top N`, `-min N`, `-json`.
 
-## Roadmap
+## Other languages (tree-sitter)
 
-The API is shaped for multi-language support: `Parse(language, src)` and the
-nil-able `Cognitive` field exist so additional languages can be added without a
-breaking change. A tree-sitter backend covering Python / JavaScript /
-TypeScript / Java / Rust / C / C++ / C# / Kotlin / PHP / Ruby / Scala and more
-is planned.
+The subpackage [`github.com/richardwooding/go-codemetrics/treesitter`](./treesitter)
+computes the same metrics for **16 more languages** using the pure-Go
+tree-sitter runtime [`gotreesitter`][gotreesitter]:
+
+> Python · JavaScript · TypeScript · Java · Rust · C · C++ · C# · Kotlin · PHP ·
+> Ruby · Scala · R · MATLAB · Perl · Swift
+
+```go
+import "github.com/richardwooding/go-codemetrics/treesitter"
+
+fns, err := treesitter.Parse("python", src) // -> []codemetrics.FunctionMetrics
+```
+
+It returns the same `FunctionMetrics` type, so the two backends are
+interchangeable. Cognitive complexity is computed for every language except
+Swift (whose grammar lacks a stable cognitive spec) — there `Cognitive` is nil
+while `Cyclomatic` is still reported.
+
+**Dependencies stay opt-in.** The module root is `go/ast`-only and pulls in
+nothing; `gotreesitter` and its embedded grammars are compiled in *only* when
+you import the `treesitter` subpackage. A plain build of that subpackage embeds
+every bundled grammar (~22 MB); to embed only the languages you use, build with
+the gotreesitter subset tags:
+
+```sh
+go build -tags 'grammar_subset grammar_subset_python grammar_subset_rust' ./...
+```
 
 ## License
 
@@ -149,3 +171,4 @@ MIT — see [LICENSE](LICENSE).
 [gocyclo]: https://github.com/fzipp/gocyclo
 [gocognit]: https://github.com/uudashr/gocognit
 [sonar]: https://www.sonarsource.com/docs/CognitiveComplexity.pdf
+[gotreesitter]: https://github.com/odvcencio/gotreesitter
